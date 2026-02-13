@@ -110,19 +110,6 @@ brr --theme mono        # No colors
 NO_COLOR=1 brr          # Also triggers monochrome
 ```
 
-### Keybindings
-
-When the test completes:
-
-| Key | Action |
-|-----|--------|
-| `h` | History |
-| `e` | Export JSON |
-| `c` | Compare |
-| `q` | Quit |
-
-During a test, press `q` to cancel.
-
 <details>
 <summary><strong>JSON output example</strong></summary>
 
