@@ -25,6 +25,7 @@ const (
 	stateDone
 	stateError
 	stateHistory
+	stateHelp
 )
 
 // programRef is a shared reference that survives model copies.

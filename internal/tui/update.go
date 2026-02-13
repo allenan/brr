@@ -57,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case "r":
-			if m.state == stateDone || m.state == stateHistory || m.state == stateError {
+			if m.state == stateDone || m.state == stateHistory || m.state == stateHelp || m.state == stateError {
 				if m.cancel != nil {
 					m.cancel()
 				}
@@ -72,8 +72,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				fresh.latencyPanel.Resize(m.width)
 				return fresh, tea.Batch(fresh.spinner.Tick, animTick())
 			}
+		case "?":
+			if m.state == stateDone {
+				m.state = stateHelp
+				return m, nil
+			}
 		case "esc":
-			if m.state == stateHistory {
+			if m.state == stateHistory || m.state == stateHelp {
 				m.state = stateDone
 				return m, nil
 			}
