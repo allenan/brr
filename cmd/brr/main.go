@@ -15,6 +15,8 @@ import (
 	"github.com/allenan/brr/internal/tui"
 )
 
+var version = "dev"
+
 var (
 	flagJSON       bool
 	flagSimple     bool
@@ -26,10 +28,11 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "brr",
-	Short: "A delightful TUI speedtest",
-	Long:  "brr — a terminal-based internet speed test with bufferbloat grading, sparkline visualizations, and spring-animated numbers.",
-	RunE:  run,
+	Use:     "brr",
+	Short:   "A delightful TUI speedtest",
+	Long:    "brr — a terminal-based internet speed test with bufferbloat grading, sparkline visualizations, and spring-animated numbers.",
+	Version: version,
+	RunE:    run,
 }
 
 func init() {
