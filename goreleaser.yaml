@@ -21,11 +21,13 @@ builds:
       - -s -w -X main.version={{.Version}}
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 checksum:
   name_template: "checksums.txt"
@@ -38,10 +40,12 @@ changelog:
       - "^test:"
       - "^chore:"
 
-brews:
-  - repository:
+homebrew_casks:
+  - name: brr
+    binaries:
+      - brr
+    repository:
       owner: allenan
       name: homebrew-tap
     homepage: "https://github.com/allenan/brr"
     description: "A delightful TUI speedtest with bufferbloat grading"
-    license: "MIT"
