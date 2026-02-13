@@ -24,6 +24,11 @@ type LatencyPanel struct {
 
 	latencySparkline sparkline.Model
 	jitterSparkline  sparkline.Model
+	bbSparkline      sparkline.Model
+
+	recentRTTs   []float64 // accumulated RTT samples for running jitter
+	idleRTTSum   float64   // running idle baseline sum
+	idleRTTCount int       // running idle baseline count
 
 	latencyStyle lipgloss.Style
 	gradeGood    lipgloss.Style
@@ -45,10 +50,15 @@ func NewLatencyPanel(latencyStyle, gradeGood, gradeOk, gradeWarn, gradeBad, mute
 	js.AutoMaxValue = true
 	js.Style = sparkStyle
 
+	bs := sparkline.New(15, 2)
+	bs.AutoMaxValue = true
+	bs.Style = sparkStyle
+
 	return LatencyPanel{
 		Width:            80,
 		latencySparkline: ls,
 		jitterSparkline:  js,
+		bbSparkline:      bs,
 		latencyStyle:     latencyStyle,
 		gradeGood:        gradeGood,
 		gradeOk:          gradeOk,
@@ -66,6 +76,7 @@ func (p *LatencyPanel) Resize(width int) {
 	sw := p.sparkWidth()
 	p.latencySparkline.Resize(sw, 2)
 	p.jitterSparkline.Resize(sw, 2)
+	p.bbSparkline.Resize(sw, 2)
 }
 
 func (p LatencyPanel) sparkWidth() int {
@@ -77,11 +88,39 @@ func (p LatencyPanel) sparkWidth() int {
 	return colW
 }
 
-// PushLatency adds a latency sample to the sparkline.
+// PushLatency adds an idle latency sample to the sparkline.
 func (p *LatencyPanel) PushLatency(rtt float64) {
 	p.IdleLatency = rtt
 	p.latencySparkline.Push(rtt)
 	p.latencySparkline.Draw()
+
+	p.recentRTTs = append(p.recentRTTs, rtt)
+	p.idleRTTSum += rtt
+	p.idleRTTCount++
+
+	if len(p.recentRTTs) >= 2 {
+		p.PushJitter(speedtest.Jitter(p.recentRTTs))
+	}
+}
+
+// PushLoadedLatency adds a loaded latency sample to the sparklines.
+func (p *LatencyPanel) PushLoadedLatency(rtt float64) {
+	p.latencySparkline.Push(rtt)
+	p.latencySparkline.Draw()
+
+	p.recentRTTs = append(p.recentRTTs, rtt)
+	if len(p.recentRTTs) >= 2 {
+		p.PushJitter(speedtest.Jitter(p.recentRTTs))
+	}
+
+	if p.idleRTTCount > 0 {
+		delta := rtt - (p.idleRTTSum / float64(p.idleRTTCount))
+		if delta < 0 {
+			delta = 0
+		}
+		p.bbSparkline.Push(delta)
+		p.bbSparkline.Draw()
+	}
 }
 
 // PushJitter adds a jitter value to the sparkline.
@@ -124,14 +163,14 @@ func (p LatencyPanel) View() string {
 
 	// Bufferbloat column
 	bbLabel := p.latencyStyle.Render("Bufferbloat")
-	bbGrade := p.renderGrade(p.BBGradeDL)
-	var bbDetail string
-	if p.BBDeltaDL > 0 {
-		bbDetail = p.mutedStyle.Render(fmt.Sprintf("+%.0fms", p.BBDeltaDL))
+	var bbValue string
+	if p.Done {
+		bbValue = p.renderGrade(p.BBGradeDL) + "  " + p.mutedStyle.Render(fmt.Sprintf("+%.0fms", p.BBDeltaDL))
 	} else {
-		bbDetail = " "
+		bbValue = p.boldStyle.Render("—")
 	}
-	bbCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, bbLabel, bbGrade, bbDetail))
+	bbSpark := p.bbSparkline.View()
+	bbCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, bbLabel, bbValue, bbSpark))
 
 	panel := lipgloss.JoinHorizontal(lipgloss.Top, latCol, " ", jitCol, " ", bbCol)
 	return lipgloss.NewStyle().PaddingLeft(2).Render(panel)
