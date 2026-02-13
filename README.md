@@ -2,10 +2,8 @@
 
 **internet go brr**
 
-<!-- TODO: Record demo GIF using VHS or asciinema (15-20s, dark terminal, clean font) -->
-<!-- Should show: test starting → progress bars filling with sparklines → speed numbers spring-animating → latency panel → bufferbloat grade -->
 <p align="center">
-  <img src="assets/demo.gif" alt="brr demo" width="720">
+  <img src="demo/demo.gif" alt="brr demo" width="720">
 </p>
 
 <p align="center">
