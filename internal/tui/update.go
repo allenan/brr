@@ -135,8 +135,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ulGauge.Done = true
 
 		m.latencyPanel.Active = true
+		m.latencyPanel.Done = true
 		m.latencyPanel.IdleLatency = msg.result.IdleLatency.Avg
 		m.latencyPanel.Jitter = msg.result.IdleLatency.Jitter
+		if len(msg.result.DownloadLatency.Samples) > 0 {
+			m.latencyPanel.LoadedLatencyDL = msg.result.DownloadLatency.Avg
+		}
 
 		m.latencyPanel.BBGradeDL = msg.result.BufferbloatDL
 		m.latencyPanel.BBGradeUL = msg.result.BufferbloatUL

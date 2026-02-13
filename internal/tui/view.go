@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/allenan/brr/internal/speedtest"
 )
 
 // View renders the TUI.
@@ -32,7 +34,7 @@ func (m Model) View() string {
 	sections = append(sections, "")
 
 	// Latency panel (always rendered, 3 lines)
-	sections = append(sections, "  "+m.latencyPanel.View())
+	sections = append(sections, m.latencyPanel.View())
 	sections = append(sections, "")
 
 	// Context line / status message
@@ -69,6 +71,14 @@ func (m Model) statusLine() string {
 	case stateUpload:
 		return "  " + m.spinner.View() + " Testing upload..."
 	case stateDone:
+		if m.result != nil {
+			checkStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#00D4AA"))
+			dlStr := m.theme.Download.Render(fmt.Sprintf("%.0f↓", m.result.Download.Mbps))
+			ulStr := m.theme.Upload.Render(fmt.Sprintf("%.0f↑", m.result.Upload.Mbps))
+			unit := m.theme.SpeedUnit.Render(" Mbps")
+			grade := m.renderGrade(m.result.BufferbloatDL)
+			return "  " + checkStyle.Render("✓") + " " + dlStr + "  " + ulStr + unit + "  · Bufferbloat " + grade
+		}
 		doneStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#00D4AA"))
 		return "  " + doneStyle.Render("✓") + " Test complete"
 	case stateError:
@@ -131,6 +141,19 @@ func (m Model) viewHistoryScreen() string {
 	sections = append(sections, mutedStyle.Render("  Press ESC to go back"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+func (m Model) renderGrade(grade speedtest.BufferbloatGrade) string {
+	switch grade {
+	case speedtest.GradeAPlus, speedtest.GradeA:
+		return m.theme.GradeGood.Render(string(grade))
+	case speedtest.GradeB:
+		return m.theme.GradeOk.Render(string(grade))
+	case speedtest.GradeC:
+		return m.theme.GradeWarn.Render(string(grade))
+	default:
+		return m.theme.GradeBad.Render(string(grade))
+	}
 }
 
 func trendArrow(current, previous float64) string {

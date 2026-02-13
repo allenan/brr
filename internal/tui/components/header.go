@@ -39,36 +39,31 @@ func (h Header) View() string {
 
 	logo := h.titleStyle.Render("⚡ brr")
 
-	var serverLine string
-	if h.Server.Colo != "" {
-		serverLine = h.subtitleStyle.Render(fmt.Sprintf("Server: %s", h.Server.ColoCity))
-	} else {
-		serverLine = h.subtitleStyle.Render("Connecting...")
-	}
-
-	topRow := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		logo,
-		lipgloss.NewStyle().Width(w-lipgloss.Width(logo)-lipgloss.Width(serverLine)).Render(""),
-		serverLine,
-	)
-
 	var routeLine string
 	if h.Server.Colo != "" {
 		latStr := ""
 		if h.Latency > 0 {
 			latStr = fmt.Sprintf(" (%.0fms)", h.Latency)
 		}
-		routeLine = h.mutedStyle.Render(fmt.Sprintf("  %s → %s%s",
-			h.Server.Location, h.Server.ColoCity, latStr))
+		origin := h.Server.Location
+		if h.Server.ClientCity != "" {
+			origin = h.Server.ClientCity
+		}
+		routeLeft := h.mutedStyle.Render(fmt.Sprintf("  %s → %s%s",
+			origin, h.Server.ColoCity, latStr))
+		serverRight := h.subtitleStyle.Render(fmt.Sprintf("Server: %s", h.Server.ColoCity))
+		gap := w - lipgloss.Width(routeLeft) - lipgloss.Width(serverRight)
+		if gap < 2 {
+			gap = 2
+		}
+		routeLine = routeLeft + repeatChar(' ', gap) + serverRight
+	} else {
+		routeLine = h.subtitleStyle.Render("  Connecting...")
 	}
 
 	border := h.borderStyle.Render(repeatChar('─', w))
 
-	if routeLine != "" {
-		return lipgloss.JoinVertical(lipgloss.Left, topRow, routeLine, border)
-	}
-	return lipgloss.JoinVertical(lipgloss.Left, topRow, border)
+	return lipgloss.JoinVertical(lipgloss.Left, logo, routeLine, border)
 }
 
 func repeatChar(ch rune, n int) string {

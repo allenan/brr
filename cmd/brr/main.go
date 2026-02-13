@@ -98,12 +98,16 @@ func runHeadless(ctx context.Context) error {
 	}
 
 	// Simple one-line output
+	origin := result.Server.Location
+	if result.Server.ClientCity != "" {
+		origin = result.Server.ClientCity
+	}
 	fmt.Printf("↓ %.1f Mbps  ↑ %.1f Mbps  ⏱ %.1fms  Bloat: %s  %s → %s\n",
 		result.Download.Mbps,
 		result.Upload.Mbps,
 		result.IdleLatency.Avg,
 		result.BufferbloatDL,
-		result.Server.Location,
+		origin,
 		result.Server.ColoCity,
 	)
 	return nil

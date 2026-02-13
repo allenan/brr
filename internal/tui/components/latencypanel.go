@@ -11,14 +11,16 @@ import (
 
 // LatencyPanel displays latency, jitter, and bufferbloat information.
 type LatencyPanel struct {
-	IdleLatency float64 // avg idle latency ms
-	Jitter      float64 // jitter ms
-	BBGradeDL   speedtest.BufferbloatGrade
-	BBGradeUL   speedtest.BufferbloatGrade
-	BBDeltaDL   float64 // loaded - idle median delta
-	BBDeltaUL   float64
-	Active      bool
-	Width       int // terminal width — set by parent
+	IdleLatency    float64 // avg idle latency ms
+	Jitter         float64 // jitter ms
+	LoadedLatencyDL float64 // avg loaded latency during download
+	Done           bool
+	BBGradeDL      speedtest.BufferbloatGrade
+	BBGradeUL      speedtest.BufferbloatGrade
+	BBDeltaDL      float64 // loaded - idle median delta
+	BBDeltaUL      float64
+	Active         bool
+	Width          int // terminal width — set by parent
 
 	latencySparkline sparkline.Model
 	jitterSparkline  sparkline.Model
@@ -35,11 +37,11 @@ type LatencyPanel struct {
 
 // NewLatencyPanel creates a new latency panel component.
 func NewLatencyPanel(latencyStyle, gradeGood, gradeOk, gradeWarn, gradeBad, mutedStyle, boldStyle, sparkStyle lipgloss.Style) LatencyPanel {
-	ls := sparkline.New(15, 1)
+	ls := sparkline.New(15, 2)
 	ls.AutoMaxValue = true
 	ls.Style = sparkStyle
 
-	js := sparkline.New(15, 1)
+	js := sparkline.New(15, 2)
 	js.AutoMaxValue = true
 	js.Style = sparkStyle
 
@@ -62,13 +64,13 @@ func NewLatencyPanel(latencyStyle, gradeGood, gradeOk, gradeWarn, gradeBad, mute
 func (p *LatencyPanel) Resize(width int) {
 	p.Width = width
 	sw := p.sparkWidth()
-	p.latencySparkline.Resize(sw, 1)
-	p.jitterSparkline.Resize(sw, 1)
+	p.latencySparkline.Resize(sw, 2)
+	p.jitterSparkline.Resize(sw, 2)
 }
 
 func (p LatencyPanel) sparkWidth() int {
 	// 3 columns with gaps, each column gets ~1/3 of width
-	colW := (p.Width - 8) / 3 // 8 = gaps + margin
+	colW := (p.Width - 4) / 3 // 4 = gaps + margin
 	if colW < 8 {
 		colW = 8
 	}
@@ -96,7 +98,7 @@ func (p LatencyPanel) View() string {
 		return p.viewPlaceholder()
 	}
 
-	colW := (p.Width - 8) / 3
+	colW := (p.Width - 4) / 3
 	if colW < 12 {
 		colW = 12
 	}
@@ -104,7 +106,13 @@ func (p LatencyPanel) View() string {
 
 	// Latency column
 	latLabel := p.latencyStyle.Render("Latency")
-	latValue := p.boldStyle.Render(fmt.Sprintf("%.0fms", p.IdleLatency))
+	var latValue string
+	if p.Done && p.LoadedLatencyDL > 0 {
+		latValue = p.boldStyle.Render(fmt.Sprintf("%.0fms", p.IdleLatency)) +
+			p.mutedStyle.Render(fmt.Sprintf(" → %.0fms loaded", p.LoadedLatencyDL))
+	} else {
+		latValue = p.boldStyle.Render(fmt.Sprintf("%.0fms", p.IdleLatency))
+	}
 	latSpark := p.latencySparkline.View()
 	latCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, latLabel, latValue, latSpark))
 
@@ -125,11 +133,12 @@ func (p LatencyPanel) View() string {
 	}
 	bbCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, bbLabel, bbGrade, bbDetail))
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, latCol, "  ", jitCol, "  ", bbCol)
+	panel := lipgloss.JoinHorizontal(lipgloss.Top, latCol, " ", jitCol, " ", bbCol)
+	return lipgloss.NewStyle().PaddingLeft(2).Render(panel)
 }
 
 func (p LatencyPanel) viewPlaceholder() string {
-	colW := (p.Width - 8) / 3
+	colW := (p.Width - 4) / 3
 	if colW < 12 {
 		colW = 12
 	}
@@ -137,13 +146,14 @@ func (p LatencyPanel) viewPlaceholder() string {
 	muted := p.mutedStyle
 
 	latCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Latency"), muted.Render("—"), " "))
+		muted.Render("Latency"), muted.Render("—"), " ", " "))
 	jitCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Jitter"), muted.Render("—"), " "))
+		muted.Render("Jitter"), muted.Render("—"), " ", " "))
 	bbCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Bufferbloat"), muted.Render("—"), " "))
+		muted.Render("Bufferbloat"), muted.Render("—"), " ", " "))
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, latCol, "  ", jitCol, "  ", bbCol)
+	panel := lipgloss.JoinHorizontal(lipgloss.Top, latCol, " ", jitCol, " ", bbCol)
+	return lipgloss.NewStyle().PaddingLeft(2).Render(panel)
 }
 
 func (p LatencyPanel) renderGrade(grade speedtest.BufferbloatGrade) string {
