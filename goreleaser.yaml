@@ -47,5 +47,6 @@ homebrew_casks:
     repository:
       owner: allenan
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: "https://github.com/allenan/brr"
     description: "A delightful TUI speedtest with bufferbloat grading"
