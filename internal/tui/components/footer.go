@@ -33,6 +33,7 @@ func (f Footer) View() string {
 		key    string
 		action string
 	}{
+		{"r", "Run Again"},
 		{"h", "History"},
 		{"e", "Export JSON"},
 		{"c", "Compare"},

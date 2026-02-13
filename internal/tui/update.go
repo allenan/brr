@@ -56,6 +56,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
+		case "r":
+			if m.state == stateDone || m.state == stateHistory {
+				if m.cancel != nil {
+					m.cancel()
+				}
+				fresh := NewModel(m.theme.Name, m.store)
+				fresh.width = m.width
+				fresh.height = m.height
+				fresh.pref = m.pref
+				fresh.header.Width = m.width
+				fresh.footer.Width = m.width
+				fresh.dlGauge.Resize(m.width)
+				fresh.ulGauge.Resize(m.width)
+				fresh.latencyPanel.Resize(m.width)
+				return fresh, tea.Batch(fresh.spinner.Tick, animTick())
+			}
 		case "esc":
 			if m.state == stateHistory {
 				m.state = stateDone
