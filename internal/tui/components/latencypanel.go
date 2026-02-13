@@ -144,7 +144,7 @@ func (p LatencyPanel) View() string {
 	colStyle := lipgloss.NewStyle().Width(colW)
 
 	// Latency column
-	latLabel := p.latencyStyle.Render("Latency")
+	latLabel := p.latencyStyle.Render("⏱ Latency")
 	var latValue string
 	if p.Done && p.LoadedLatencyDL > 0 {
 		latValue = p.boldStyle.Render(fmt.Sprintf("%.0fms", p.IdleLatency)) +
@@ -156,13 +156,13 @@ func (p LatencyPanel) View() string {
 	latCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, latLabel, latValue, latSpark))
 
 	// Jitter column
-	jitLabel := p.latencyStyle.Render("Jitter")
+	jitLabel := p.latencyStyle.Render("〜 Jitter")
 	jitValue := p.boldStyle.Render(fmt.Sprintf("%.1fms", p.Jitter))
 	jitSpark := p.jitterSparkline.View()
 	jitCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left, jitLabel, jitValue, jitSpark))
 
 	// Bufferbloat column
-	bbLabel := p.latencyStyle.Render("Bufferbloat")
+	bbLabel := p.latencyStyle.Render("≋ Bufferbloat")
 	var bbValue string
 	if p.Done {
 		bbValue = p.renderGrade(p.BBGradeDL) + "  " + p.mutedStyle.Render(fmt.Sprintf("+%.0fms", p.BBDeltaDL))
@@ -185,11 +185,11 @@ func (p LatencyPanel) viewPlaceholder() string {
 	muted := p.mutedStyle
 
 	latCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Latency"), muted.Render("—"), " ", " "))
+		muted.Render("⏱ Latency"), muted.Render("—"), " ", " "))
 	jitCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Jitter"), muted.Render("—"), " ", " "))
+		muted.Render("〜 Jitter"), muted.Render("—"), " ", " "))
 	bbCol := colStyle.Render(lipgloss.JoinVertical(lipgloss.Left,
-		muted.Render("Bufferbloat"), muted.Render("—"), " ", " "))
+		muted.Render("≋ Bufferbloat"), muted.Render("—"), " ", " "))
 
 	panel := lipgloss.JoinHorizontal(lipgloss.Top, latCol, " ", jitCol, " ", bbCol)
 	return lipgloss.NewStyle().PaddingLeft(2).Render(panel)

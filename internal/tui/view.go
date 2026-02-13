@@ -192,12 +192,12 @@ func (m Model) viewHelpScreen() string {
 		term string
 		desc string
 	}{
-		{"Download", "How fast data reaches your device."},
-		{"Upload", "How fast data leaves your device."},
-		{"Latency", "Round-trip time to the server and back."},
-		{"Jitter", "Variation in latency; lower means more consistent."},
-		{"Bufferbloat", "Latency increase when your connection is under load. The main cause of lag during video calls or gaming even on fast connections. Graded A+ (excellent) through F (severe)."},
-		{"Loaded Latency", "Latency measured while actively downloading or uploading."},
+		{"↓ Download", "How fast data reaches your device."},
+		{"↑ Upload", "How fast data leaves your device."},
+		{"⏱ Latency", "Round-trip time to the server and back."},
+		{"〜 Jitter", "Variation in latency; lower means more consistent."},
+		{"≋ Bufferbloat", "Latency increase when your connection is under load. The main cause of lag during video calls or gaming even on fast connections. Graded A+ (excellent) through F (severe)."},
+		{"⏱ Loaded Latency", "Latency measured while actively downloading or uploading."},
 	}
 
 	for _, e := range entries {
