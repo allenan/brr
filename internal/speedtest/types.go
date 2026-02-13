@@ -59,12 +59,10 @@ type LatencyResult struct {
 
 // ServerInfo holds metadata about the test server / client.
 type ServerInfo struct {
-	IP         string `json:"ip"`
-	Colo       string `json:"colo"`        // IATA airport code
-	ColoCity   string `json:"colo_city"`   // human-readable city name
-	Location   string `json:"location"`    // country code
-	ClientCity string `json:"client_city"` // resolved city + region of the client
-	ISP        string `json:"isp"`
+	IP       string `json:"ip"`
+	Colo     string `json:"colo"`      // IATA airport code
+	ColoCity string `json:"colo_city"` // human-readable city name
+	Location string `json:"location"`  // country code
 }
 
 // BufferbloatGrade represents the quality grade for bufferbloat.

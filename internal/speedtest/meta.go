@@ -3,11 +3,9 @@ package speedtest
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 )
 
 // coloNames maps IATA airport codes to human-readable city names.
@@ -67,6 +65,15 @@ var coloNames = map[string]string{
 	"BOM": "Mumbai, IN",
 }
 
+// ColoName returns the human-readable city name for a Cloudflare colo code,
+// or the raw code if not found.
+func ColoName(code string) string {
+	if city, ok := coloNames[code]; ok {
+		return city
+	}
+	return code
+}
+
 // FetchMeta retrieves server metadata from Cloudflare's trace endpoint.
 func FetchMeta(ctx context.Context, client *http.Client) (*ServerInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/cdn-cgi/trace", nil)
@@ -105,48 +112,5 @@ func FetchMeta(ctx context.Context, client *http.Client) (*ServerInfo, error) {
 		info.ColoCity = info.Colo
 	}
 
-	// Resolve client city from IP (best-effort, non-blocking with short timeout)
-	if info.IP != "" {
-		info.ClientCity = resolveClientCity(ctx, info.IP)
-	}
-
 	return info, scanner.Err()
-}
-
-// resolveClientCity calls ipinfo.io to resolve the user's city + region.
-// Falls back silently to empty string on any failure.
-func resolveClientCity(ctx context.Context, ip string) string {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://ipinfo.io/"+ip+"/json", nil)
-	if err != nil {
-		return ""
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return ""
-	}
-
-	var result struct {
-		City   string `json:"city"`
-		Region string `json:"region"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return ""
-	}
-
-	if result.City == "" {
-		return ""
-	}
-	if result.Region != "" {
-		return result.City + ", " + result.Region
-	}
-	return result.City
 }

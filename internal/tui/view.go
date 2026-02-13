@@ -21,9 +21,35 @@ func (m Model) View() string {
 	sections = append(sections, m.header.View())
 	sections = append(sections, "")
 
+	// Network path flow (persists once preflight starts)
+	if m.preflightPanel.HasChecks() || m.preflightPanel.Active {
+		spinnerFrame := ""
+		if m.state == statePreflight {
+			spinnerFrame = m.spinner.View()
+		}
+		sections = append(sections, m.preflightPanel.ViewFlow(m.width, spinnerFrame))
+		sections = append(sections, "")
+	}
+
 	// Status line — what's currently happening
 	sections = append(sections, m.statusLine())
 	sections = append(sections, "")
+
+	// Error state with preflight checks — show diagnostic and retry hint
+	if m.state == stateError && m.preflightPanel.HasChecks() {
+		sections = append(sections, m.preflightPanel.ViewDiagnostic())
+		sections = append(sections, "")
+		retryHint := "  " + m.theme.FooterKey.Render("r") + " " + m.theme.FooterAction.Render("Retry") +
+			"  " + m.theme.FooterKey.Render("q") + " " + m.theme.FooterAction.Render("Quit")
+		sections = append(sections, retryHint)
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	}
+
+	// During preflight/init, only show the flow + status, no speed gauges yet
+	if m.state == stateInit || m.state == statePreflight {
+		sections = append(sections, m.footer.View())
+		return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	}
 
 	// Download gauge (always rendered, 2 lines)
 	sections = append(sections, m.dlGauge.View())
@@ -62,7 +88,11 @@ func (m Model) View() string {
 
 func (m Model) statusLine() string {
 	switch m.state {
-	case stateInit, stateMeta:
+	case stateInit:
+		return "  " + m.spinner.View() + " Connecting..."
+	case statePreflight:
+		return "  " + m.spinner.View() + " Checking connection..."
+	case stateMeta:
 		return "  " + m.spinner.View() + " Connecting..."
 	case stateLatency:
 		return "  " + m.spinner.View() + " Measuring latency..."
@@ -82,6 +112,9 @@ func (m Model) statusLine() string {
 		doneStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#00D4AA"))
 		return "  " + doneStyle.Render("✓") + " Test complete"
 	case stateError:
+		if m.preflightPanel.HasChecks() {
+			return "" // diagnostic shown by preflight panel
+		}
 		errStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4444"))
 		return "  " + errStyle.Render(fmt.Sprintf("✗ Error: %v", m.err))
 	default:

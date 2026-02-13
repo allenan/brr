@@ -2,10 +2,12 @@ package tui
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/allenan/brr/internal/preflight"
 	"github.com/allenan/brr/internal/speedtest"
 )
 
@@ -56,6 +58,18 @@ func (c *tuiCallback) OnIdleLatencySample(s speedtest.LatencySample) {
 
 func (c *tuiCallback) OnLoadedLatencySample(s speedtest.LatencySample) {
 	c.program.Send(loadedLatencySampleMsg{sample: s})
+}
+
+// runPreflight runs network diagnostic checks, sending individual results
+// via p.Send() and returning preflightCompleteMsg when done.
+func runPreflight(ctx context.Context, pref *programRef) tea.Cmd {
+	return func() tea.Msg {
+		client := &http.Client{Timeout: 10 * time.Second}
+		result := preflight.Run(ctx, client, func(r preflight.CheckResult) {
+			pref.p.Send(preflightCheckMsg{result: r})
+		})
+		return preflightCompleteMsg{result: result}
+	}
 }
 
 // animTick returns a command that sends animTickMsg at 60fps.

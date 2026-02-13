@@ -57,7 +57,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		case "r":
-			if m.state == stateDone || m.state == stateHistory {
+			if m.state == stateDone || m.state == stateHistory || m.state == stateError {
 				if m.cancel != nil {
 					m.cancel()
 				}
@@ -98,16 +98,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dlGauge.Tick()
 		m.ulGauge.Tick()
 
-		// On first tick with program reference, start the test
+		// On first tick with program reference, start preflight checks
 		if m.state == stateInit && m.pref != nil && m.pref.p != nil {
-			m.state = stateMeta
+			m.state = statePreflight
+			m.preflightPanel.Active = true
 			m.ctx, m.cancel = context.WithCancel(context.Background())
 			return m, tea.Batch(
 				animTick(),
-				runFullTest(m.ctx, m.engine, m.pref.p),
+				runPreflight(m.ctx, m.pref),
 			)
 		}
 		return m, animTick()
+
+	// Preflight messages
+	case preflightCheckMsg:
+		m.preflightPanel.PushResult(msg.result)
+		return m, nil
+
+	case preflightCompleteMsg:
+		m.preflightPanel.Active = false
+		if msg.result.Passed {
+			m.state = stateMeta
+			return m, runFullTest(m.ctx, m.engine, m.pref.p)
+		}
+		m.preflightPanel.SetMessage(msg.result.Message)
+		m.state = stateError
+		m.err = fmt.Errorf("preflight check failed")
+		return m, nil
 
 	// Sample messages
 	case downloadSampleMsg:
@@ -139,8 +156,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = stateDone
 		m.result = msg.result
 		m.server = msg.result.Server
-		m.header.Server = msg.result.Server
-		m.header.Latency = msg.result.IdleLatency.Avg
 
 		// Set final values
 		m.dlGauge.TargetMbps = msg.result.Download.Mbps

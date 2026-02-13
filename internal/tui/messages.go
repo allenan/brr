@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"github.com/allenan/brr/internal/preflight"
 	"github.com/allenan/brr/internal/speedtest"
 )
 
@@ -44,6 +45,15 @@ type idleLatencySampleMsg struct {
 
 type loadedLatencySampleMsg struct {
 	sample speedtest.LatencySample
+}
+
+// Preflight messages
+type preflightCheckMsg struct {
+	result preflight.CheckResult
+}
+
+type preflightCompleteMsg struct {
+	result *preflight.Result
 }
 
 // Animation tick

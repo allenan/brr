@@ -1,32 +1,22 @@
 package components
 
 import (
-	"fmt"
-
 	"github.com/charmbracelet/lipgloss"
-
-	"github.com/allenan/brr/internal/speedtest"
 )
 
-// Header renders the logo and server info bar.
+// Header renders the logo and border bar.
 type Header struct {
-	Server  speedtest.ServerInfo
-	Latency float64 // idle latency avg in ms
-	Width   int
+	Width int
 
-	titleStyle    lipgloss.Style
-	subtitleStyle lipgloss.Style
-	mutedStyle    lipgloss.Style
-	borderStyle   lipgloss.Style
+	titleStyle  lipgloss.Style
+	borderStyle lipgloss.Style
 }
 
 // NewHeader creates a header component.
-func NewHeader(titleStyle, subtitleStyle, mutedStyle, borderStyle lipgloss.Style) Header {
+func NewHeader(titleStyle, borderStyle lipgloss.Style) Header {
 	return Header{
-		titleStyle:    titleStyle,
-		subtitleStyle: subtitleStyle,
-		mutedStyle:    mutedStyle,
-		borderStyle:   borderStyle,
+		titleStyle:  titleStyle,
+		borderStyle: borderStyle,
 	}
 }
 
@@ -38,32 +28,9 @@ func (h Header) View() string {
 	}
 
 	logo := h.titleStyle.Render("⚡ brr")
-
-	var routeLine string
-	if h.Server.Colo != "" {
-		latStr := ""
-		if h.Latency > 0 {
-			latStr = fmt.Sprintf(" (%.0fms)", h.Latency)
-		}
-		origin := h.Server.Location
-		if h.Server.ClientCity != "" {
-			origin = h.Server.ClientCity
-		}
-		routeLeft := h.mutedStyle.Render(fmt.Sprintf("  %s → %s%s",
-			origin, h.Server.ColoCity, latStr))
-		serverRight := h.subtitleStyle.Render(fmt.Sprintf("Server: %s", h.Server.ColoCity))
-		gap := w - lipgloss.Width(routeLeft) - lipgloss.Width(serverRight)
-		if gap < 2 {
-			gap = 2
-		}
-		routeLine = routeLeft + repeatChar(' ', gap) + serverRight
-	} else {
-		routeLine = h.subtitleStyle.Render("  Connecting...")
-	}
-
 	border := h.borderStyle.Render(repeatChar('─', w))
 
-	return lipgloss.JoinVertical(lipgloss.Left, logo, routeLine, border)
+	return lipgloss.JoinVertical(lipgloss.Left, logo, border)
 }
 
 func repeatChar(ch rune, n int) string {

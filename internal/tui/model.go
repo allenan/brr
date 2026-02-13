@@ -17,6 +17,7 @@ type state int
 
 const (
 	stateInit state = iota
+	statePreflight
 	stateMeta
 	stateLatency
 	stateDownload
@@ -57,13 +58,14 @@ type Model struct {
 	currentULMbps float64
 
 	// Components
-	spinner      spinner.Model
-	header       components.Header
-	dlGauge      components.SpeedGauge
-	ulGauge      components.SpeedGauge
-	latencyPanel components.LatencyPanel
-	footer       components.Footer
-	theme        Theme
+	spinner        spinner.Model
+	header         components.Header
+	preflightPanel components.PreflightPanel
+	dlGauge        components.SpeedGauge
+	ulGauge        components.SpeedGauge
+	latencyPanel   components.LatencyPanel
+	footer         components.Footer
+	theme          Theme
 
 	// Program reference for p.Send() — shared across model copies
 	pref *programRef
@@ -77,7 +79,8 @@ func NewModel(themeName string, store *history.Store) Model {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFD700"))
 
-	header := components.NewHeader(theme.Title, theme.Subtitle, theme.Muted, theme.Border)
+	header := components.NewHeader(theme.Title, theme.Border)
+	preflightPanel := components.NewPreflightPanel(theme.GradeGood, theme.GradeBad, theme.Muted, theme.Bold, theme.Subtitle)
 	dlGauge := components.NewSpeedGauge("  ↓ DOWNLOAD", theme.Download, theme.SpeedNum, theme.SpeedUnit, theme.SparkStyle, theme.ProgressDL)
 	ulGauge := components.NewSpeedGauge("  ↑ UPLOAD", theme.Upload, theme.SpeedNum, theme.SpeedUnit,
 		lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B9D")), theme.ProgressUL)
@@ -85,19 +88,20 @@ func NewModel(themeName string, store *history.Store) Model {
 	footer := components.NewFooter(theme.FooterKey, theme.FooterAction, theme.Muted)
 
 	return Model{
-		state:        stateInit,
-		engine:       speedtest.NewEngine(),
-		store:        store,
-		spinner:      s,
-		header:       header,
-		dlGauge:      dlGauge,
-		ulGauge:      ulGauge,
-		latencyPanel: latencyPanel,
-		footer:       footer,
-		theme:        theme,
-		width:        80,
-		height:       24,
-		pref:         &programRef{},
+		state:          stateInit,
+		engine:         speedtest.NewEngine(),
+		store:          store,
+		spinner:        s,
+		header:         header,
+		preflightPanel: preflightPanel,
+		dlGauge:        dlGauge,
+		ulGauge:        ulGauge,
+		latencyPanel:   latencyPanel,
+		footer:         footer,
+		theme:          theme,
+		width:          80,
+		height:         24,
+		pref:           &programRef{},
 	}
 }
 
